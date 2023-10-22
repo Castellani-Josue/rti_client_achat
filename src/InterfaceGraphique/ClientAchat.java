@@ -3,7 +3,11 @@ package InterfaceGraphique;
 import Properties.PropertiesPerso;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.LineBorder;
 import java.awt.*;
+
+
 
 public class ClientAchat extends JFrame
 {
@@ -41,6 +45,7 @@ public class ClientAchat extends JFrame
     private JButton viderLePanierButton;
     private JLabel TotalLabel;
     private JTextField TotTxt;
+    private JPanel ImgPanel;
 
     private JPanel ImagePanel;
 
@@ -63,6 +68,8 @@ public class ClientAchat extends JFrame
         Dimension supp = new Dimension(250,20);
         supprimerArticleButton.setPreferredSize(supp);
         viderLePanierButton.setPreferredSize(supp);
+        Dimension Img = new Dimension(220,220);
+        ImgLabel.setPreferredSize(Img);
         /*Dimension labDim = new Dimension(300,200);
         ImgLabel.setPreferredSize(labDim);*/
         setContentPane(MainPanel);
@@ -73,6 +80,14 @@ public class ClientAchat extends JFrame
         setSize(1000,700);
         setLocation((screen.width - this.getSize().width)/2,(screen.height - this.getSize().height)/2);
         setResizable(false);
+
+        Border border = new LineBorder(Color.BLACK, 1); // Couleur et largeur de la bordure
+        AchatPanel.setBorder(border);
+        PanierPanel.setBorder(border);
+        ImgLabel.setBorder(border);
+
+
+
 
         ImageIcon logoIcon = new ImageIcon(PropertiesPerso.PropertiesTest());
         setIconImage(logoIcon.getImage());
