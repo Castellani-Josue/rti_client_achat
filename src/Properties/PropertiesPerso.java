@@ -42,36 +42,6 @@ public class PropertiesPerso
         return null;
     }
 
-    public static String PropertiesTest2()
-    {
-        try {
-
-            Properties prop = new Properties();
-            FileInputStream fis =  new FileInputStream(CONFIG_FILE);
-            prop.load(fis);
-            //prop.list(System.out);
-
-
-
-            String imagePath1 = prop.getProperty("image1.path");
-
-            return imagePath1;
-
-
-
-
-        }
-        catch(FileNotFoundException e)
-        {
-            System.out.println("Erreur ! Fichier non trouve...");
-        }
-        catch(IOException e)
-        {
-            System.out.println("Erreur IO !");
-        }
-
-        return null;
-    }
 
 
 

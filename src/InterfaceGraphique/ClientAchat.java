@@ -2,10 +2,17 @@ package InterfaceGraphique;
 
 import Properties.PropertiesPerso;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.swing.table.DefaultTableCellRenderer;
+//import javax.swing.table.TableCellRenderer;
 
 
 
@@ -39,13 +46,14 @@ public class ClientAchat extends JFrame
     private JLabel ImgLabel;
     private JLabel PubLabel;
     private JLabel PanierLabel;
-    private JList list1;
     private JButton confimerAchatButton;
     private JButton supprimerArticleButton;
     private JButton viderLePanierButton;
     private JLabel TotalLabel;
     private JTextField TotTxt;
     private JPanel ImgPanel;
+    private JTable PanierTable;
+    private JScrollPane PanierScroll;
 
     private JPanel ImagePanel;
 
@@ -70,6 +78,11 @@ public class ClientAchat extends JFrame
         viderLePanierButton.setPreferredSize(supp);
         Dimension Img = new Dimension(220,220);
         ImgLabel.setPreferredSize(Img);
+        int width = PanierTable.getWidth();
+        int newHeight = 150;
+        Dimension panier = new Dimension(width,newHeight);
+        //PanierTable.setPreferredSize(panier);
+        PanierScroll.setPreferredSize(panier);
         /*Dimension labDim = new Dimension(300,200);
         ImgLabel.setPreferredSize(labDim);*/
         setContentPane(MainPanel);
@@ -86,7 +99,56 @@ public class ClientAchat extends JFrame
         PanierPanel.setBorder(border);
         ImgLabel.setBorder(border);
 
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("Intitulé");
+        model.addColumn("Prix à l'unité");
+        model.addColumn("Quantité");
 
+        PanierTable.setModel(model);
+        PanierTable.getTableHeader().setReorderingAllowed(false);
+
+
+        DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer();
+        headerRenderer.setBackground(Color.PINK);
+        // Appliquez la couleur aux header
+        for (int i = 0; i < model.getColumnCount(); i++)
+        {
+            PanierTable.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
+        }
+
+
+
+        //ImageIcon imageIcon = new ImageIcon(ClientAchat.class.getResource("resources/"));
+        //ImgLabel.setIcon(imageIcon);
+        //ImgLabel = new JLabel(new ImageIcon(imagepath));
+
+        String directoryPath = "C:\\Users\\josue\\Java_Project_2023_2024\\rti_client_achat\\resources";
+
+        // Liste des fichiers dans le répertoire
+        File directory = new File(directoryPath);
+        File[] files = directory.listFiles();
+
+        if (files != null && files.length > 0)
+        {
+            for (File file : files) {
+                if (file.isFile())
+                {
+                    try
+                    {
+                        // Chargez l'image depuis le fichier
+                        BufferedImage img = ImageIO.read(file);
+
+                        // Créez une ImageIcon à partir de l'image
+                        ImageIcon imageIcon = new ImageIcon(img);
+                        ImgLabel.setIcon(imageIcon);
+                    }
+                    catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
 
 
         ImageIcon logoIcon = new ImageIcon(PropertiesPerso.PropertiesTest());
