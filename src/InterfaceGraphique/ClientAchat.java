@@ -18,6 +18,9 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import javax.swing.table.DefaultTableCellRenderer;
+
+import static Socket.socket.Receive;
+import static Socket.socket.Send;
 //import javax.swing.table.TableCellRenderer;
 
 
@@ -72,17 +75,9 @@ public class ClientAchat extends JFrame
     //int sClient;
     Socket sClient;
 
-    public String getNom()
-    {
-        String nom = NomTxt.getText();
-        return nom;
-    }
 
-    public String getMotDePasse()
-    {
-        String mdp = MDPtxt.getText();
-        return mdp;
-    }
+
+
 
     public int isNouveauClientChecked()
     {
@@ -92,6 +87,8 @@ public class ClientAchat extends JFrame
         }
         return 0;
     }
+
+
 
     public static Socket ClientSocket()
     {
@@ -117,91 +114,95 @@ public class ClientAchat extends JFrame
         boolean onContinue = true;
         String requete, reponse;
 
-        try {
-            // Construction de la requête
-            requete = "LOGIN#" + user + "#" + password + "#" + NouveauClient;
 
-            // Envoi de la requête + réception de la réponse
-            PrintWriter out = new PrintWriter(sClient.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(sClient.getInputStream()));
+        // Construction de la requête
+        requete = String.format("LOGIN#%s#%s#%d", user, password, NouveauClient);
 
-            // Envoi de la requête
-            out.println(requete);
+        /************ENVOIE************************/
 
-            // Attente de la réponse
-            reponse = in.readLine();
-
-            if (reponse == null) {
-                System.out.println("Serveur arrêté, aucune réponse reçue...");
-                //sClient.close();
-                System.exit(1);
-            }
-
-            // Parsing de la réponse
-            String[] parts = reponse.split("#");
-            String statut = parts[1];
-
-            if ("ok".equals(statut)) {
-                String resultat = parts[2];
-                System.out.println("Résultat = " + resultat);
-                // Vous pouvez effectuer des opérations d'interface utilisateur ici
-
-                // Envoi d'une nouvelle requête CONSULT#1
-                requete = "CONSULT#1";
-                out.println(requete);
-                reponse = in.readLine();
-
-                if (reponse == null) {
-                    System.out.println("Serveur arrêté, aucune réponse reçue...");
-                    //sClient.close();
-                    System.exit(1);
-                }
-
-                String action = reponse.split("#")[1];
-                if ("ok".equals(action)) {
-                    int id, stock;
-                    String intitule, image;
-                    float prix;
-
-                    id = Integer.parseInt(reponse.split("#")[2]);
-                    intitule = reponse.split("#")[3];
-                    prix = Float.parseFloat(reponse.split("#")[4].replace(',', '.'));
-                    stock = Integer.parseInt(reponse.split("#")[5]);
-                    image = reponse.split("#")[6];
-
-                    System.out.println("id = " + id);
-                    System.out.println("intitule = " + intitule);
-                    System.out.println("prix = " + prix);
-                    System.out.println("stock = " + stock);
-                    System.out.println("image = " + image);
-
-                    // Vous pouvez effectuer des opérations d'interface utilisateur ici
-                } else {
-                    String erreur = reponse.split("#")[2];
-                    System.out.println("Erreur: " + erreur);
-                    onContinue = false;
-                }
-            } else {
-                String erreur = parts[2];
-                System.out.println("Erreur: " + erreur);
-                if (erreur.equals("Mot de passe incorrecte !")) {
-                    off++;
-                    // Vous pouvez effectuer des opérations d'interface utilisateur ici
-                    if (off == 3) {
-                        onContinue = false;
-                    }
-                } else {
-                    // Vous pouvez effectuer des opérations d'interface utilisateur ici
-                    onContinue = false;
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Erreur de communication avec le serveur : " + e.getMessage());
-            onContinue = false;
+        //Socket socket = new Socket(SERVER_IP, SERVER_PORT);
+        try
+        {
+            DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+            Send(requete,fluxSortie);
         }
+        catch (IOException e1)
+        {
+            System.err.println("Erreur de SEND !" + e1.getMessage());
+            try {
+                sClient.close();
+            } catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+
+        /*************RECEPTION*****************************/
+
+        try
+        {
+            DataInputStream fluxEntree = new DataInputStream(sClient.getInputStream());
+            Receive(fluxEntree);
+        }
+        catch (IOException e2)
+        {
+            System.err.println("Erreur de RECEIVE " + e2.getMessage());
+        }
+
+
+
 
         return onContinue;
     }
+
+    public void loginOK()
+    {
+        LoginButton.setEnabled(false);
+        LogoutButton.setEnabled(true);
+        NomTxt.setEditable(false);
+        MDPtxt.setEditable(false);
+        nouveauCliChecbox.setEnabled(false);
+
+        QttSpinner.setEnabled(true);
+        PrecedentBouton.setEnabled(true);
+        SuivantBouton.setEnabled(true);
+        acheterButton.setEnabled(true);
+        supprimerArticleButton.setEnabled(true);
+        StockTxt.setEnabled(true);
+        viderLePanierButton.setEnabled(true);
+        confimerAchatButton.setEnabled(true);
+
+    }
+
+    public void logoutOK()
+    {
+
+        LoginButton.setEnabled(true);
+        LogoutButton.setEnabled(false);
+
+
+        NomTxt.setEditable(true);
+        MDPtxt.setEditable(true);
+
+        //nouveauCliChecbox.setEnabled(false);
+
+
+        QttSpinner.setVisible(true);
+        PrecedentBouton.setVisible(true);
+        SuivantBouton.setVisible(true);
+        acheterButton.setVisible(true);
+        supprimerArticleButton.setVisible(true);
+        viderLePanierButton.setVisible(true);
+        confimerAchatButton.setVisible(true);
+
+        // Réinitialiser des valeurs
+        //setNom("");
+        //setMotDePasse("");
+        nouveauCliChecbox.setSelected(false);
+    }
+
+
 
     public ClientAchat()
     {
@@ -251,7 +252,7 @@ public class ClientAchat extends JFrame
         PanierTable.setModel(model);
         PanierTable.getTableHeader().setReorderingAllowed(false);
 
-
+        logoutOK();
         DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer();
         headerRenderer.setBackground(Color.BLACK);
         // Appliquez la couleur aux header
@@ -309,19 +310,19 @@ public class ClientAchat extends JFrame
                 String user = getNom();
                 String password = getMotDePasse();
 
-
-
-
                 try
                 {
                     sClient = ClientSocket();
 
                     System.out.println("Connecté au serveur.");
 
-                    if (!OVESP_Login(user, password, nouveauClient, sClient)) {
+                    if (!OVESP_Login(user, password, nouveauClient, sClient))
+                    {
                         System.err.println("Erreur dans OVESP_Login");
                         System.exit(1);
                     }
+                    loginOK();
+
                 } catch (Exception e2)
                 {
                     System.err.println("Erreur de ClientSocket : " + e2.getMessage());
@@ -344,4 +345,49 @@ public class ClientAchat extends JFrame
     }
 
 
+    public void setNom(JTextField NomTxt)
+    {
+        this.NomTxt = NomTxt;
+    }
+
+    public void setTextFieldMotDePasse(JTextField MDPtxt)
+    {
+        this.MDPtxt = MDPtxt;
+    }
+
+    public void setNom(String text)
+    {
+        if (text.isEmpty())
+        {
+            NomTxt.setText("");
+        }
+        else
+        {
+            NomTxt.setText(text);
+        }
+    }
+
+    public String getNom()
+    {
+        return NomTxt.getText();
+    }
+
+
+    public void setMotDePasse(String text)
+    {
+        if (text.isEmpty())
+        {
+            MDPtxt.setText("");
+        } else
+        {
+            MDPtxt.setText(text);
+        }
+    }
+
+    public String getMotDePasse()
+    {
+        return MDPtxt.getText();
+    }
 }
+
+
