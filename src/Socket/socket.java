@@ -4,9 +4,30 @@ package Socket;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 
 public class socket
 {
+
+    public static final String SERVER_IP = "192.168.146.128";
+    public static final int SERVER_PORT = 50000;
+    public static Socket ClientSocket()
+    {
+        Socket socket = new Socket();
+
+        try
+        {
+            socket.connect(new InetSocketAddress(SERVER_IP, SERVER_PORT));
+            System.out.println("Connecté au serveur.");
+
+            return socket;
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     private socket()
     {
