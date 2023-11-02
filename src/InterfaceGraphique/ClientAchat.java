@@ -13,20 +13,25 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.JOptionPane;
 
 import static Socket.socket.Receive;
 import static Socket.socket.Send;
+import static Socket.socket.ClientSocket;
 //import javax.swing.table.TableCellRenderer;
 
 
 
 public class ClientAchat extends JFrame
 {
+    private static ClientAchat dialog;
     private JPanel MainPanel;
     private JPanel AchatPanel;
     private JPanel PubPanel;
@@ -67,93 +72,22 @@ public class ClientAchat extends JFrame
     private JPanel ImagePanel;
 
 
-    public static final String SERVER_IP = "192.168.146.128";
-    public static final int SERVER_PORT = 50000;
-
-
     private boolean logged = false;
-    //int sClient;
-    Socket sClient;
+    private Socket sClient;
+    private int idArticleEnCours;
+    private int nbArticlePanier;
+    private float prixTotal = 0;
 
 
+    private String REPERTOIRE_IMAGES = "C:\\Users\\cycro\\IdeaProjects\\RTI\\rti_client_achat-master\\resources\\";
 
-
-
-    public int isNouveauClientChecked()
+    public int getIdArticleEnCours()
     {
-        if (nouveauCliChecbox.isSelected())
-        {
-            return 1;
-        }
-        return 0;
+        return idArticleEnCours;
     }
-
-
-
-    public static Socket ClientSocket()
+    private void setIdArticleEnCours(int tmp)
     {
-        Socket socket = new Socket();
-
-        try
-        {
-            socket.connect(new InetSocketAddress(SERVER_IP, SERVER_PORT));
-            System.out.println("Connecté au serveur.");
-
-            return socket;
-        } catch (IOException e)
-        {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-
-    public boolean OVESP_Login(String user, String password, int NouveauClient, Socket sClient)
-    {
-        int off = 0;
-        boolean onContinue = true;
-        String requete, reponse;
-
-
-        // Construction de la requête
-        requete = String.format("LOGIN#%s#%s#%d", user, password, NouveauClient);
-
-        /************ENVOIE************************/
-
-        //Socket socket = new Socket(SERVER_IP, SERVER_PORT);
-        try
-        {
-            DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
-            Send(requete,fluxSortie);
-        }
-        catch (IOException e1)
-        {
-            System.err.println("Erreur de SEND !" + e1.getMessage());
-            try {
-                sClient.close();
-            } catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-
-        /*************RECEPTION*****************************/
-
-        try
-        {
-            DataInputStream fluxEntree = new DataInputStream(sClient.getInputStream());
-            Receive(fluxEntree);
-        }
-        catch (IOException e2)
-        {
-            System.err.println("Erreur de RECEIVE " + e2.getMessage());
-        }
-
-
-
-
-        return onContinue;
+        idArticleEnCours = tmp;
     }
 
     public void loginOK()
@@ -203,6 +137,188 @@ public class ClientAchat extends JFrame
     }
 
 
+    public int isNouveauClientChecked()
+    {
+        if (nouveauCliChecbox.isSelected())
+        {
+            return 1;
+        }
+        return 0;
+    }
+
+    public boolean OVESP_Login(String user, String password, int NouveauClient)
+    {
+        String requete, responce;
+
+
+        // Construction de la requête
+        requete = String.format("LOGIN#%s#%s#%d", user, password, NouveauClient);
+
+        /************ENVOIE************************/
+
+
+        try
+        {
+            DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+            Send(requete,fluxSortie);
+        }
+        catch (IOException e1)
+        {
+            System.err.println("Erreur de SEND !" + e1.getMessage());
+            try {
+                sClient.close();
+            } catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+            return false;
+        }
+
+
+        /*************RECEPTION*****************************/
+
+        try
+        {
+            DataInputStream fluxEntree = new DataInputStream(sClient.getInputStream());
+            responce = Receive(fluxEntree);
+            String[] data = responce.split("#");
+            if(data[1] == "ok")
+            {
+                //envoie d'une requete consult dans la suite du code mdr
+            }
+            else if (data[1] == "ko")
+            {
+                //affichage de l'erreur
+                JOptionPane.showMessageDialog(null, data[2], "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+        catch (IOException e2)
+        {
+            System.err.println("Erreur de RECEIVE " + e2.getMessage());
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean Logout()
+    {
+        String requete = "LOGOUT";
+
+        //---------------------ENVOIE---------------------------//
+
+        try
+        {
+            DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+            Send(requete,fluxSortie);
+        }
+        catch (IOException e1)
+        {
+            System.err.println("Erreur de SEND !" + e1.getMessage());
+            try {
+                sClient.close();
+            } catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+            return false;
+        }
+
+        JOptionPane.showMessageDialog(null, "Logout réussi.", "LOGOUT", JOptionPane.INFORMATION_MESSAGE);
+        logoutOK();
+        nbArticlePanier = 0;
+        logged = false;
+        return true;
+    }
+
+    public boolean EnvoieConsult(String requete)
+    {
+
+        String responce;
+
+        //---------------------ENVOIE---------------------------//
+
+        try
+        {
+            DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+            Send(requete,fluxSortie);
+        }
+        catch (IOException e1)
+        {
+            System.err.println("Erreur de SEND !" + e1.getMessage());
+            try {
+                sClient.close();
+            } catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+            return false;
+        }
+
+        //---------------------RECEPTION-----------------------//
+
+        try
+        {
+            DataInputStream fluxEntree = new DataInputStream(sClient.getInputStream());
+            responce = Receive(fluxEntree);
+            String[] data = responce.split("#");
+            if(data[1] == "ok")
+            {
+                //affichage des éléments
+                setIdArticleEnCours(1);
+                int id, stock;
+                String intitule, image;
+                float prix;
+
+                //sprintf(reponse,"CONSULT#ok#%d#%s#%f#%d#%s", atoi(Tuple[0]), Tuple[1], atof(Tuple[2]), atoi(Tuple[3]), Tuple[4]);
+
+                id = Integer.parseInt(data[2]);
+                intitule = data[3];
+
+                //ici il y a peut-être une erreur avec un point qui devrait être une virgule
+                prix = Float.parseFloat(data[4]);
+
+                stock = Integer.parseInt(data[5]);
+                image = data[6];
+
+
+                System.out.printf("id = %d\n", id);
+                System.out.printf("intitule = %s\n", intitule);
+                System.out.printf("prix = %f\n", prix);
+                System.out.printf("stock = %d\n", stock);
+                System.out.printf("image = %s\n", image);
+
+                setArticle(intitule, prix, stock, image);
+            }
+            else if (data[1] == "ko")
+            {
+                //affichage de l'erreur
+                JOptionPane.showMessageDialog(null, "Article non trouvé.", "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+        catch (IOException e2)
+        {
+            System.err.println("Erreur de RECEIVE " + e2.getMessage());
+            return false;
+        }
+
+        return true;
+    }
+
+    private void setArticle(String intitule, float prix, int stock, String image)
+    {
+        ArticleTxt.setText(intitule);
+        PrixTxt.setText("" + prix);
+        StockTxt.setText("" + stock);
+
+        ImageIcon imageIcon = new ImageIcon(REPERTOIRE_IMAGES + image);
+        ImgLabel = new JLabel(imageIcon);
+    }
+
+    private int getQuantite()
+    {
+        return (int) QttSpinner.getValue();
+    }
 
     public ClientAchat()
     {
@@ -262,40 +378,6 @@ public class ClientAchat extends JFrame
         }
 
 
-
-        //ImageIcon imageIcon = new ImageIcon(ClientAchat.class.getResource("resources/"));
-        //ImgLabel.setIcon(imageIcon);
-        //ImgLabel = new JLabel(new ImageIcon(imagepath));
-
-        String directoryPath = "C:\\Users\\josue\\Java_Project_2023_2024\\rti_client_achat\\resources";
-
-        // Liste des fichiers dans le répertoire
-        File directory = new File(directoryPath);
-        File[] files = directory.listFiles();
-
-        if (files != null && files.length > 0)
-        {
-            for (File file : files) {
-                if (file.isFile())
-                {
-                    try
-                    {
-                        // Chargez l'image depuis le fichier
-                        BufferedImage img = ImageIO.read(file);
-
-                        // Créez une ImageIcon à partir de l'image
-                        ImageIcon imageIcon = new ImageIcon(img);
-                        ImgLabel.setIcon(imageIcon);
-                    }
-                    catch (IOException e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-
-
         ImageIcon logoIcon = new ImageIcon(PropertiesPerso.PropertiesTest());
         setIconImage(logoIcon.getImage());
 
@@ -316,11 +398,24 @@ public class ClientAchat extends JFrame
 
                     System.out.println("Connecté au serveur.");
 
-                    if (!OVESP_Login(user, password, nouveauClient, sClient))
+                    if (!OVESP_Login(user, password, nouveauClient))
                     {
                         System.err.println("Erreur dans OVESP_Login");
                         System.exit(1);
                     }
+                    else
+                    {
+                        //la consult
+
+                        String requete = "CONSULT#1";
+                        if(!EnvoieConsult(requete))
+                        {
+                            System.err.println("Erreur dans EnvoieConsult");
+                            System.exit(1);
+                        }
+
+                    }
+                    logged = true;
                     loginOK();
 
                 } catch (Exception e2)
@@ -334,13 +429,268 @@ public class ClientAchat extends JFrame
             }
         });
 
+        PrecedentBouton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //test si l'id de l'article est a 0
+                if(getIdArticleEnCours() == 1)
+                {
+                    JOptionPane.showMessageDialog(null, "Pas d'article précédent.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                }
+                else
+                {
+                    int tmp = getIdArticleEnCours();
+                    tmp--;
+                    setIdArticleEnCours(tmp);
 
+                    String requete = "CONSULT#" + idArticleEnCours;
+                    if(!EnvoieConsult(requete))
+                    {
+                        System.err.println("Erreur dans EnvoieConsult");
+
+                        //remettre à l'etat initial
+                        tmp++;
+                        setIdArticleEnCours(tmp);
+
+                        System.exit(1);
+                    }
+                }
+            }
+        });
+
+        SuivantBouton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //test si l'id de l'article est a 0
+                if(getIdArticleEnCours() == 21)
+                {
+                    JOptionPane.showMessageDialog(null, "Pas d'article suivant.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                }
+                else
+                {
+                    int tmp = getIdArticleEnCours();
+                    tmp++;
+                    setIdArticleEnCours(tmp);
+
+                    String requete = "CONSULT#" + idArticleEnCours;
+                    if(!EnvoieConsult(requete))
+                    {
+                        System.err.println("Erreur dans EnvoieConsult");
+
+                        //remettre à l'etat initial
+                        tmp--;
+                        setIdArticleEnCours(tmp);
+
+                        System.exit(1);
+                    }
+                }
+            }
+        });
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if(logged == true)
+                {
+                    if(!Logout())
+                    {
+                        System.err.println("Erreur dans le logout");
+                        System.exit(1);
+                    }
+                }
+
+                nbArticlePanier = 0;
+
+                //fermeture de la fenêtre
+                dialog.dispose();
+                System.exit(0);
+            }
+        });
+
+        LogoutButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(logged == true)
+                {
+                    if(!Logout())
+                    {
+                        System.err.println("Erreur dans le logout");
+                        System.exit(1);
+                    }
+                }
+                else
+                {
+                    JOptionPane.showMessageDialog(null, "Impossible de se logout (pas log)", "Erreur", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        acheterButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String requete = "PRESENCECADDIE#" + getIdArticleEnCours();
+                String responce;
+
+                int idArticle, quantite;
+                float prix;
+                String intitule;
+
+                //---------------------ENVOIE---------------------------//
+
+                try
+                {
+                    DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+                    Send(requete,fluxSortie);
+                }
+                catch (IOException e1)
+                {
+                    System.err.println("Erreur de  : " + e1.getMessage());
+                    System.exit(1);
+                }
+
+                //---------------------RECEPTION-----------------------//
+
+                try
+                {
+                    DataInputStream fluxEntree = new DataInputStream(sClient.getInputStream());
+                    responce = Receive(fluxEntree);
+
+                    String[] data = responce.split("#");
+                    boolean estPresent = false;
+
+                    if(data[1] == "ok")
+                        estPresent = true;
+
+                    if((nbArticlePanier < 5 || estPresent) && getQuantite() != 0)
+                    {
+                        //ici c'est la gesiton de l'achat
+                        requete = "ACHAT#" + getIdArticleEnCours() + "#" + getQuantite();
+
+                        //---------------------ENVOIE---------------------------//
+
+                        try
+                        {
+                            DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+                            Send(requete,fluxSortie);
+                        }
+                        catch (IOException e1)
+                        {
+                            System.err.println("Erreur de  : " + e1.getMessage());
+                            System.exit(1);
+                        }
+
+                        //---------------------RECEPTION-----------------------//
+                        try
+                        {
+                            DataInputStream fluxEntreeAchat = new DataInputStream(sClient.getInputStream());
+                            responce = Receive(fluxEntreeAchat);
+
+                            //vérification de si l'achat a échoué
+
+                            String[] dataAchat = responce.split("#");
+
+                            if(dataAchat[1] == "ko")
+                            {
+                                System.err.println("Erreur de dans la requete achat !");
+                                JOptionPane.showMessageDialog(null, "L'achat a echoue !", "Erreur", JOptionPane.ERROR_MESSAGE);
+                            }
+
+                            responce = "";
+                            requete = "";
+
+                            //----------caddie
+
+                            //---------------------ENVOIE---------------------------//
+
+                            requete = "CADDIE";
+
+                            try
+                            {
+                                DataOutputStream fluxSortieCaddie = new DataOutputStream(sClient.getOutputStream());
+                                Send(requete,fluxSortieCaddie);
+                            }
+                            catch (IOException e1)
+                            {
+                                System.err.println("Erreur de  : " + e1.getMessage());
+                                System.exit(1);
+                            }
+
+                            //---------------------RECEPTION-----------------------//
+                            try
+                            {
+                                DataInputStream fluxEntreeCaddie = new DataInputStream(sClient.getInputStream());
+                                responce = Receive(fluxEntreeCaddie);
+
+                                //gestion de la reponse du caddie
+
+                                int nboccurence = nombreOccurrences(responce);
+                                String[] ElemCaddie = responce.split("$");
+                                for (int i = 0; i < nboccurence ; i++)
+                                {
+                                    String[] UnElemCaddie = ElemCaddie[i].split(",");
+
+                                    idArticle = Integer.parseInt(UnElemCaddie[0]);
+                                    intitule = UnElemCaddie[1];
+                                    quantite = Integer.parseInt(UnElemCaddie[2]);
+                                    prix = Float.parseFloat(UnElemCaddie[3]);
+
+                                    prixTotal = prixTotal + prix;
+                                    //ici il faut ajouté un article au panier(fonction a faire)
+
+                                }
+
+                            } catch (Exception e4)
+                            {
+                                System.err.println("Erreur de  : " + e4.getMessage());
+                                System.exit(1);
+                            }
+
+
+                        } catch (Exception e3)
+                        {
+                            System.err.println("Erreur de  : " + e3.getMessage());
+                            System.exit(1);
+                        }
+                    }
+                    else
+                    {
+                        if(nbArticlePanier == 5)
+                        {
+                            JOptionPane.showMessageDialog(null, "Nombre maximum d'achat atteint !", "Erreur", JOptionPane.ERROR_MESSAGE);
+                        }
+                        if(getQuantite() == 0)
+                        {
+                            JOptionPane.showMessageDialog(null, "Veuillez choisir une quantité valide !", "Erreur", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                } catch (Exception e2)
+                {
+                    System.err.println("Erreur de  : " + e2.getMessage());
+                    System.exit(1);
+                }
+            }
+        });
+
+
+
+    }
+    public static int nombreOccurrences(String lachaine)
+    {
+        int compter = 0;
+        for (int i = 0; i < lachaine.length(); i++)
+        {
+            if('$' == lachaine.charAt(1))
+            {
+                compter++;
+            }
+        }
+        return compter;
     }
 
     public static void main(String[] args)
     {
         FlatDarculaLaf.install(new FlatDarculaLaf());
-        ClientAchat dialog = new ClientAchat();
+        dialog = new ClientAchat();
         dialog.setVisible(true);
     }
 
