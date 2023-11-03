@@ -19,8 +19,14 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.text.DecimalFormat;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.JOptionPane;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+
 
 import static Socket.socket.Receive;
 import static Socket.socket.Send;
@@ -136,6 +142,27 @@ public class ClientAchat extends JFrame
         nouveauCliChecbox.setSelected(false);
     }
 
+    public void ajoutArticleTablePanier(String intiule, int quantite, float prix)
+    {
+        DefaultTableModel model = (DefaultTableModel) PanierTable.getModel();
+        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        String Prix = decimalFormat.format(prix);
+        model.addRow(new Object[] { intiule, "" + quantite, Prix });
+
+        PanierTable.setModel(model);
+    }
+    public void videTablePanier()
+    {
+        PanierTable.setModel(null);
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("Intitulé");
+        model.addColumn("Prix à l'unité");
+        model.addColumn("Quantité");
+
+        PanierTable = new JTable(model);
+        PanierScroll = new JScrollPane(PanierLabel);
+    }
+
 
     public int isNouveauClientChecked()
     {
@@ -229,6 +256,77 @@ public class ClientAchat extends JFrame
         nbArticlePanier = 0;
         logged = false;
         return true;
+    }
+
+    public void gestionCaddie()
+    {
+        //----------caddie
+
+        String requete = "CADDIE";
+        String responce = "";
+
+        int idArticle, quantite;
+        float prix;
+        String intitule;
+
+
+        //---------------------ENVOIE---------------------------//
+
+        try
+        {
+            DataOutputStream fluxSortieCaddie = new DataOutputStream(sClient.getOutputStream());
+            Send(requete,fluxSortieCaddie);
+        }
+        catch (IOException e1)
+        {
+            System.err.println("Erreur de  : " + e1.getMessage());
+            System.exit(1);
+        }
+
+        //---------------------RECEPTION-----------------------//
+        try
+        {
+            DataInputStream fluxEntreeCaddie = new DataInputStream(sClient.getInputStream());
+            responce = Receive(fluxEntreeCaddie);
+
+            String[] testOK = responce.split("#");
+            if(testOK[1] == "ko")
+            {
+                JOptionPane.showMessageDialog(null, testOK[2], "Erreur", JOptionPane.ERROR_MESSAGE);
+                System.exit(1);
+            }
+
+            //gestion de la reponse du caddie
+
+            videTablePanier();
+            prixTotal = 0;
+            int nboccurence = nombreOccurrences(responce);
+            String[] ElemCaddie = responce.split("$");
+            for (int i = 0; i < nboccurence ; i++)
+            {
+                String[] UnElemCaddie = ElemCaddie[i].split(",");
+
+                idArticle = Integer.parseInt(UnElemCaddie[0]);
+                intitule = UnElemCaddie[1];
+                quantite = Integer.parseInt(UnElemCaddie[2]);
+                prix = Float.parseFloat(UnElemCaddie[3]);
+
+                prixTotal = prixTotal + prix;
+                //ici il faut ajouté un article au panier
+
+                ajoutArticleTablePanier(intitule, quantite, prix);
+            }
+
+            JTextField tmp = new JTextField();
+            tmp.setText("" + prixTotal);
+            setTotTxt(tmp);
+
+        } catch (Exception e4)
+        {
+            System.err.println("Erreur de  : " + e4.getMessage());
+            System.exit(1);
+        }
+
     }
 
     public boolean EnvoieConsult(String requete)
@@ -365,7 +463,9 @@ public class ClientAchat extends JFrame
         model.addColumn("Prix à l'unité");
         model.addColumn("Quantité");
 
-        PanierTable.setModel(model);
+        PanierTable = new JTable(model);
+        PanierScroll = new JScrollPane(PanierLabel);
+
         PanierTable.getTableHeader().setReorderingAllowed(false);
 
         logoutOK();
@@ -531,10 +631,6 @@ public class ClientAchat extends JFrame
                 String requete = "PRESENCECADDIE#" + getIdArticleEnCours();
                 String responce;
 
-                int idArticle, quantite;
-                float prix;
-                String intitule;
-
                 //---------------------ENVOIE---------------------------//
 
                 try
@@ -595,56 +691,12 @@ public class ClientAchat extends JFrame
                                 JOptionPane.showMessageDialog(null, "L'achat a echoue !", "Erreur", JOptionPane.ERROR_MESSAGE);
                             }
 
-                            responce = "";
-                            requete = "";
+                            gestionCaddie();
 
-                            //----------caddie
-
-                            //---------------------ENVOIE---------------------------//
-
-                            requete = "CADDIE";
-
-                            try
+                            if(!estPresent)
                             {
-                                DataOutputStream fluxSortieCaddie = new DataOutputStream(sClient.getOutputStream());
-                                Send(requete,fluxSortieCaddie);
+                                nbArticlePanier++;
                             }
-                            catch (IOException e1)
-                            {
-                                System.err.println("Erreur de  : " + e1.getMessage());
-                                System.exit(1);
-                            }
-
-                            //---------------------RECEPTION-----------------------//
-                            try
-                            {
-                                DataInputStream fluxEntreeCaddie = new DataInputStream(sClient.getInputStream());
-                                responce = Receive(fluxEntreeCaddie);
-
-                                //gestion de la reponse du caddie
-
-                                int nboccurence = nombreOccurrences(responce);
-                                String[] ElemCaddie = responce.split("$");
-                                for (int i = 0; i < nboccurence ; i++)
-                                {
-                                    String[] UnElemCaddie = ElemCaddie[i].split(",");
-
-                                    idArticle = Integer.parseInt(UnElemCaddie[0]);
-                                    intitule = UnElemCaddie[1];
-                                    quantite = Integer.parseInt(UnElemCaddie[2]);
-                                    prix = Float.parseFloat(UnElemCaddie[3]);
-
-                                    prixTotal = prixTotal + prix;
-                                    //ici il faut ajouté un article au panier(fonction a faire)
-
-                                }
-
-                            } catch (Exception e4)
-                            {
-                                System.err.println("Erreur de  : " + e4.getMessage());
-                                System.exit(1);
-                            }
-
 
                         } catch (Exception e3)
                         {
@@ -667,6 +719,163 @@ public class ClientAchat extends JFrame
                 {
                     System.err.println("Erreur de  : " + e2.getMessage());
                     System.exit(1);
+                }
+            }
+        });
+
+        supprimerArticleButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selectRow = PanierTable.getSelectedRow();
+                if(selectRow == -1)
+                {
+                    JOptionPane.showMessageDialog(null, "Veuillez sélectionner une ligne", "Erreur", JOptionPane.ERROR_MESSAGE);
+                }
+                else
+                {
+                    String requete = "CANCEL#" + selectRow;
+                    String responce = "";
+
+                    //---------------------ENVOIE---------------------------//
+
+                    try
+                    {
+                        DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+                        Send(requete,fluxSortie);
+                    }
+                    catch (IOException e1)
+                    {
+                        System.err.println("Erreur de  : " + e1.getMessage());
+                        System.exit(1);
+                    }
+
+                    //---------------------RECEPTION-----------------------//
+
+                    try
+                    {
+                        DataInputStream fluxEntreeCaddie = new DataInputStream(sClient.getInputStream());
+                        responce = Receive(fluxEntreeCaddie);
+                    } catch (Exception e1)
+                    {
+                        System.err.println("Erreur de  : " + e1.getMessage());
+                        System.exit(1);
+                    }
+
+                    String[] data = responce.split("#");
+
+                    if(data[1] == "ok")
+                    {
+                        JOptionPane.showMessageDialog(null, "Suppression reussie !", "CANCEL", JOptionPane.INFORMATION_MESSAGE);
+                        nbArticlePanier--;
+
+                        videTablePanier();
+                        JTextField tmp = new JTextField();
+                        tmp.setText("");
+                        setTotTxt(tmp);
+
+                        //--------------------gestion du caddie
+
+                        gestionCaddie();
+
+                        JOptionPane.showMessageDialog(null, "Suppression reussie !", "CANCELALL", JOptionPane.INFORMATION_MESSAGE);
+
+                    }
+                    else
+                    {
+                        JOptionPane.showMessageDialog(null, data[2], "Erreur", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+        
+        viderLePanierButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                String requete = "CANCELALL", responce;
+
+                //---------------------ENVOIE---------------------------//
+
+                try
+                {
+                    DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+                    Send(requete,fluxSortie);
+                }
+                catch (IOException e1)
+                {
+                    System.err.println("Erreur de  : " + e1.getMessage());
+                    System.exit(1);
+                }
+
+                //---------------------RECEPTION-----------------------//
+
+                try
+                {
+                    DataInputStream fluxEntreeCaddie = new DataInputStream(sClient.getInputStream());
+                    responce = Receive(fluxEntreeCaddie);
+                } catch (Exception e1)
+                {
+                    System.err.println("Erreur de  : " + e1.getMessage());
+                    System.exit(1);
+                }
+
+
+                videTablePanier();
+                prixTotal = 0.0F;
+                JTextField tmp = new JTextField();
+                tmp.setText("");
+                setTotTxt(tmp);
+                nbArticlePanier = 0;
+                JOptionPane.showMessageDialog(null, "Vidage du Caddie reussie !", "CANCELALL", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
+        confimerAchatButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                String requete = "CONFIRMER", responce = "";
+
+                //---------------------ENVOIE---------------------------//
+
+                try
+                {
+                    DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+                    Send(requete,fluxSortie);
+                }
+                catch (IOException e1)
+                {
+                    System.err.println("Erreur de  : " + e1.getMessage());
+                    System.exit(1);
+                }
+
+                //---------------------RECEPTION-----------------------//
+
+                try
+                {
+                    DataInputStream fluxEntreeCaddie = new DataInputStream(sClient.getInputStream());
+                    responce = Receive(fluxEntreeCaddie);
+                } catch (Exception e1)
+                {
+                    System.err.println("Erreur de  : " + e1.getMessage());
+                    System.exit(1);
+                }
+
+                String[] data = responce.split("#");
+                if(data[1] == "ok")
+                {
+                    videTablePanier();
+                    prixTotal = 0.0F;
+                    JTextField tmp = new JTextField();
+                    tmp.setText("");
+                    setTotTxt(tmp);
+                    nbArticlePanier = 0;
+
+                    JOptionPane.showMessageDialog(null, data[2], "CONFIMER", JOptionPane.INFORMATION_MESSAGE);
+                }
+                else
+                {
+                    JOptionPane.showMessageDialog(null, data[2], "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -703,6 +912,10 @@ public class ClientAchat extends JFrame
     public void setTextFieldMotDePasse(JTextField MDPtxt)
     {
         this.MDPtxt = MDPtxt;
+    }
+
+    public void setTotTxt(JTextField Totaltxt) {
+        this.TotTxt = Totaltxt;
     }
 
     public void setNom(String text)
