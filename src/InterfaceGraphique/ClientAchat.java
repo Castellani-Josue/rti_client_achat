@@ -209,11 +209,11 @@ public class ClientAchat extends JFrame
             DataInputStream fluxEntree = new DataInputStream(sClient.getInputStream());
             responce = Receive(fluxEntree);
             String[] data = responce.split("#");
-            if(data[1] == "ok")
+            if(data[1].equals("ok"))
             {
                 //envoie d'une requete consult dans la suite du code mdr
             }
-            else if (data[1] == "ko")
+            else if (data[1].equals("ko"))
             {
                 //affichage de l'erreur
                 JOptionPane.showMessageDialog(null, data[2], "Erreur", JOptionPane.ERROR_MESSAGE);
@@ -290,7 +290,7 @@ public class ClientAchat extends JFrame
             responce = Receive(fluxEntreeCaddie);
 
             String[] testOK = responce.split("#");
-            if(testOK[1] == "ko")
+            if(testOK[1].equals("ko"))
             {
                 JOptionPane.showMessageDialog(null, testOK[2], "Erreur", JOptionPane.ERROR_MESSAGE);
                 System.exit(1);
@@ -360,7 +360,7 @@ public class ClientAchat extends JFrame
             DataInputStream fluxEntree = new DataInputStream(sClient.getInputStream());
             responce = Receive(fluxEntree);
             String[] data = responce.split("#");
-            if(data[1] == "ok")
+            if(data[1].equals("ok"))
             {
                 //affichage des éléments
                 setIdArticleEnCours(1);
@@ -388,7 +388,7 @@ public class ClientAchat extends JFrame
 
                 setArticle(intitule, prix, stock, image);
             }
-            else if (data[1] == "ko")
+            else if (data[1].equals("ko"))
             {
                 //affichage de l'erreur
                 JOptionPane.showMessageDialog(null, "Article non trouvé.", "Erreur", JOptionPane.ERROR_MESSAGE);
@@ -485,47 +485,58 @@ public class ClientAchat extends JFrame
         LoginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                char[] login = new char[50];
-                char[] mdp = new char[50];
                 int nouveauClient = isNouveauClientChecked();
 
                 String user = getNom();
                 String password = getMotDePasse();
-
-                try
+                if(user.equals("") || user.equals(" ") || password.equals("") || password.equals(" "))
                 {
-                    sClient = ClientSocket();
-
-                    System.out.println("Connecté au serveur.");
-
-                    if (!OVESP_Login(user, password, nouveauClient))
+                    if(user.equals("") || user.equals(" "))
                     {
-                        System.err.println("Erreur dans OVESP_Login");
-                        System.exit(1);
+                        JOptionPane.showMessageDialog(null, "User invalide !", "Erreur", JOptionPane.ERROR_MESSAGE);
                     }
-                    else
+                    if(password.equals("") || password.equals(" "))
                     {
-                        //la consult
+                        JOptionPane.showMessageDialog(null, "Password invalide !", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        sClient = ClientSocket();
 
-                        String requete = "CONSULT#1";
-                        if(!EnvoieConsult(requete))
+                        System.out.println("Connecté au serveur.");
+
+                        if (!OVESP_Login(user, password, nouveauClient))
                         {
-                            System.err.println("Erreur dans EnvoieConsult");
+                            System.err.println("Erreur dans OVESP_Login");
                             System.exit(1);
                         }
+                        else
+                        {
+                            //la consult
 
+                            String requete = "CONSULT#1";
+                            if(!EnvoieConsult(requete))
+                            {
+                                System.err.println("Erreur dans EnvoieConsult");
+                                System.exit(1);
+                            }
+
+                        }
+                        logged = true;
+                        loginOK();
+
+                    } catch (Exception e2)
+                    {
+                        System.err.println("Erreur de ClientSocket : " + e2.getMessage());
+                        System.exit(1);
                     }
+
+
                     logged = true;
-                    loginOK();
-
-                } catch (Exception e2)
-                {
-                    System.err.println("Erreur de ClientSocket : " + e2.getMessage());
-                    System.exit(1);
                 }
-
-
-                logged = true;
             }
         });
 
@@ -654,7 +665,7 @@ public class ClientAchat extends JFrame
                     String[] data = responce.split("#");
                     boolean estPresent = false;
 
-                    if(data[1] == "ok")
+                    if(data[1].equals("ok"))
                         estPresent = true;
 
                     if((nbArticlePanier < 5 || estPresent) && getQuantite() != 0)
@@ -685,7 +696,7 @@ public class ClientAchat extends JFrame
 
                             String[] dataAchat = responce.split("#");
 
-                            if(dataAchat[1] == "ko")
+                            if(dataAchat[1].equals("ko"))
                             {
                                 System.err.println("Erreur de dans la requete achat !");
                                 JOptionPane.showMessageDialog(null, "L'achat a echoue !", "Erreur", JOptionPane.ERROR_MESSAGE);
@@ -763,7 +774,7 @@ public class ClientAchat extends JFrame
 
                     String[] data = responce.split("#");
 
-                    if(data[1] == "ok")
+                    if(data[1].equals("ok"))
                     {
                         JOptionPane.showMessageDialog(null, "Suppression reussie !", "CANCEL", JOptionPane.INFORMATION_MESSAGE);
                         nbArticlePanier--;
@@ -862,7 +873,7 @@ public class ClientAchat extends JFrame
                 }
 
                 String[] data = responce.split("#");
-                if(data[1] == "ok")
+                if(data[1].equals("ok"))
                 {
                     videTablePanier();
                     prixTotal = 0.0F;
