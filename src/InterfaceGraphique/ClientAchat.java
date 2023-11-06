@@ -179,14 +179,14 @@ public class ClientAchat extends JFrame
 
 
         // Construction de la requête
-        requete = String.format("LOGIN#%s#%s#%d", user, password, NouveauClient);
+        requete = "LOGIN#" + user + "#" + password + "#" + NouveauClient;
 
         /************ENVOIE************************/
 
 
         try
         {
-            DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+            DataOutputStream fluxSortie = new DataOutputStream(new BufferedOutputStream(sClient.getOutputStream()));
             Send(requete,fluxSortie);
         }
         catch (IOException e1)
@@ -206,7 +206,7 @@ public class ClientAchat extends JFrame
 
         try
         {
-            DataInputStream fluxEntree = new DataInputStream(sClient.getInputStream());
+            DataInputStream fluxEntree = new DataInputStream(new BufferedInputStream(sClient.getInputStream()));
             responce = Receive(fluxEntree);
             String[] data = responce.split("#");
             if(data[1].equals("ok"))
@@ -236,7 +236,7 @@ public class ClientAchat extends JFrame
 
         try
         {
-            DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+            DataOutputStream fluxSortie = new DataOutputStream(new BufferedOutputStream(sClient.getOutputStream()));
             Send(requete,fluxSortie);
         }
         catch (IOException e1)
@@ -274,7 +274,7 @@ public class ClientAchat extends JFrame
 
         try
         {
-            DataOutputStream fluxSortieCaddie = new DataOutputStream(sClient.getOutputStream());
+            DataOutputStream fluxSortieCaddie = new DataOutputStream(new BufferedOutputStream(sClient.getOutputStream()));
             Send(requete,fluxSortieCaddie);
         }
         catch (IOException e1)
@@ -286,7 +286,7 @@ public class ClientAchat extends JFrame
         //---------------------RECEPTION-----------------------//
         try
         {
-            DataInputStream fluxEntreeCaddie = new DataInputStream(sClient.getInputStream());
+            DataInputStream fluxEntreeCaddie = new DataInputStream(new BufferedInputStream(sClient.getInputStream()));
             responce = Receive(fluxEntreeCaddie);
 
             String[] testOK = responce.split("#");
@@ -338,7 +338,7 @@ public class ClientAchat extends JFrame
 
         try
         {
-            DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+            DataOutputStream fluxSortie = new DataOutputStream(new BufferedOutputStream(sClient.getOutputStream()));
             Send(requete,fluxSortie);
         }
         catch (IOException e1)
@@ -357,7 +357,7 @@ public class ClientAchat extends JFrame
 
         try
         {
-            DataInputStream fluxEntree = new DataInputStream(sClient.getInputStream());
+            DataInputStream fluxEntree = new DataInputStream(new BufferedInputStream(sClient.getInputStream()));
             responce = Receive(fluxEntree);
             String[] data = responce.split("#");
             if(data[1].equals("ok"))
@@ -646,7 +646,7 @@ public class ClientAchat extends JFrame
 
                 try
                 {
-                    DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+                    DataOutputStream fluxSortie = new DataOutputStream(new BufferedOutputStream(sClient.getOutputStream()));
                     Send(requete,fluxSortie);
                 }
                 catch (IOException e1)
@@ -659,7 +659,7 @@ public class ClientAchat extends JFrame
 
                 try
                 {
-                    DataInputStream fluxEntree = new DataInputStream(sClient.getInputStream());
+                    DataInputStream fluxEntree = new DataInputStream(new BufferedInputStream(sClient.getInputStream()));
                     responce = Receive(fluxEntree);
 
                     String[] data = responce.split("#");
@@ -677,7 +677,7 @@ public class ClientAchat extends JFrame
 
                         try
                         {
-                            DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+                            DataOutputStream fluxSortie = new DataOutputStream(new BufferedOutputStream(sClient.getOutputStream()));
                             Send(requete,fluxSortie);
                         }
                         catch (IOException e1)
@@ -689,7 +689,7 @@ public class ClientAchat extends JFrame
                         //---------------------RECEPTION-----------------------//
                         try
                         {
-                            DataInputStream fluxEntreeAchat = new DataInputStream(sClient.getInputStream());
+                            DataInputStream fluxEntreeAchat = new DataInputStream(new BufferedInputStream(sClient.getInputStream()));
                             responce = Receive(fluxEntreeAchat);
 
                             //vérification de si l'achat a échoué
@@ -751,7 +751,7 @@ public class ClientAchat extends JFrame
 
                     try
                     {
-                        DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+                        DataOutputStream fluxSortie = new DataOutputStream(new BufferedOutputStream(sClient.getOutputStream()));
                         Send(requete,fluxSortie);
                     }
                     catch (IOException e1)
@@ -764,7 +764,7 @@ public class ClientAchat extends JFrame
 
                     try
                     {
-                        DataInputStream fluxEntreeCaddie = new DataInputStream(sClient.getInputStream());
+                        DataInputStream fluxEntreeCaddie = new DataInputStream(new BufferedInputStream(sClient.getInputStream()));
                         responce = Receive(fluxEntreeCaddie);
                     } catch (Exception e1)
                     {
@@ -809,7 +809,7 @@ public class ClientAchat extends JFrame
 
                 try
                 {
-                    DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+                    DataOutputStream fluxSortie = new DataOutputStream(new BufferedOutputStream(sClient.getOutputStream()));
                     Send(requete,fluxSortie);
                 }
                 catch (IOException e1)
@@ -822,7 +822,7 @@ public class ClientAchat extends JFrame
 
                 try
                 {
-                    DataInputStream fluxEntreeCaddie = new DataInputStream(sClient.getInputStream());
+                    DataInputStream fluxEntreeCaddie = new DataInputStream(new BufferedInputStream(sClient.getInputStream()));
                     responce = Receive(fluxEntreeCaddie);
                 } catch (Exception e1)
                 {
@@ -851,7 +851,7 @@ public class ClientAchat extends JFrame
 
                 try
                 {
-                    DataOutputStream fluxSortie = new DataOutputStream(sClient.getOutputStream());
+                    DataOutputStream fluxSortie = new DataOutputStream(new BufferedOutputStream(sClient.getOutputStream()));
                     Send(requete,fluxSortie);
                 }
                 catch (IOException e1)
@@ -864,7 +864,7 @@ public class ClientAchat extends JFrame
 
                 try
                 {
-                    DataInputStream fluxEntreeCaddie = new DataInputStream(sClient.getInputStream());
+                    DataInputStream fluxEntreeCaddie = new DataInputStream(new BufferedInputStream(sClient.getInputStream()));
                     responce = Receive(fluxEntreeCaddie);
                 } catch (Exception e1)
                 {
