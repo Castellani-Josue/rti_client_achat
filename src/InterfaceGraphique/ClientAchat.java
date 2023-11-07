@@ -1,7 +1,6 @@
 package InterfaceGraphique;
 
 import Properties.PropertiesPerso;
-import Socket.socket;
 import com.formdev.flatlaf.FlatDarculaLaf;
 
 
@@ -25,7 +24,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.table.DefaultTableModel;
 
 
 import static Socket.socket.Receive;
@@ -85,16 +83,8 @@ public class ClientAchat extends JFrame
     private float prixTotal = 0;
 
 
-    private String REPERTOIRE_IMAGES = "C:\\Users\\cycro\\IdeaProjects\\RTI\\rti_client_achat-master\\resources\\";
+    private String REPERTOIRE_IMAGES = "C:\\Users\\josue\\Java_Project_2023_2024\\rti_client_achat\\resources\\";
 
-    public int getIdArticleEnCours()
-    {
-        return idArticleEnCours;
-    }
-    private void setIdArticleEnCours(int tmp)
-    {
-        idArticleEnCours = tmp;
-    }
 
     public void loginOK()
     {
@@ -137,8 +127,11 @@ public class ClientAchat extends JFrame
         confimerAchatButton.setVisible(true);
 
         // Réinitialiser des valeurs
-        //setNom("");
-        //setMotDePasse("");
+
+        setNom("");
+        setMotDePasse("");
+        setArticle("", (float) -1.0,-1,"");
+
         nouveauCliChecbox.setSelected(false);
     }
 
@@ -153,14 +146,22 @@ public class ClientAchat extends JFrame
     }
     public void videTablePanier()
     {
-        PanierTable.setModel(null);
         DefaultTableModel model = new DefaultTableModel();
         model.addColumn("Intitulé");
         model.addColumn("Prix à l'unité");
         model.addColumn("Quantité");
 
-        PanierTable = new JTable(model);
-        PanierScroll = new JScrollPane(PanierLabel);
+
+        PanierTable.setModel(model);
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+
+        // Supposons que "columnIndex" est l'index de la colonne pour laquelle vous souhaitez définir l'alignement.
+        PanierTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        PanierTable.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        PanierTable.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
+
+        PanierTable.getTableHeader().setReorderingAllowed(false);
     }
 
 
@@ -265,7 +266,7 @@ public class ClientAchat extends JFrame
         String requete = "CADDIE";
         String responce = "";
 
-        int idArticle, quantite;
+        int quantite;
         float prix;
         String intitule;
 
@@ -300,26 +301,48 @@ public class ClientAchat extends JFrame
 
             videTablePanier();
             prixTotal = 0;
-            int nboccurence = nombreOccurrences(responce);
-            String[] ElemCaddie = responce.split("$");
-            for (int i = 0; i < nboccurence ; i++)
+            //int nboccurence = nombreOccurrences(responce);
+
+
+            //--------------------Problème------------------------------//
+            /*Vous obtenez probablement l'erreur "Index 1 out of bounds for length 1" parce que ElemCaddie a une longueur de 1,
+            mais vous essayez d'accéder à ElemCaddie[i] où i est supérieur à 0. Assurez-vous que i est dans les limites de ElemCaddie.
+            De plus, dans votre boucle for, vous utilisez nboccurence comme condition,
+            mais il est possible que ElemCaddie ait moins d'éléments que nboccurence,
+            ce qui pourrait également entraîner une exception.*/
+            //-------------------------------------------------------------//
+
+
+            //--------------------Résolution------------------------------//
+            /*Lorsque vous utilisez String.split("$"), le caractère $ est interprété
+            comme une expression régulière, ce qui signifie qu'il est utilisé
+            comme un délimiteur spécial. Pour l'utiliser comme un caractère ordinaire, vous devez échapper le $ en utilisant \\$
+            for (String elem : ElemCaddie) {: Vous itérez à travers toutes les sous-chaînes obtenues
+            à partir de la division précédente,
+            en les stockant dans la variable elem.*/
+            //-------------------------------------------------------------//
+
+
+            String[] ElemCaddie = responce.split("\\$");
+            for (String elem : ElemCaddie)
             {
-                String[] UnElemCaddie = ElemCaddie[i].split(",");
+                elem = elem.replace("$", "");
+                String[] UnElemCaddie = elem.split(",");
 
-                idArticle = Integer.parseInt(UnElemCaddie[0]);
-                intitule = UnElemCaddie[1];
-                quantite = Integer.parseInt(UnElemCaddie[2]);
-                prix = Float.parseFloat(UnElemCaddie[3]);
+                if (UnElemCaddie.length >= 4)
+                {
+                    intitule = UnElemCaddie[1];
+                    quantite = Integer.parseInt(UnElemCaddie[2]);
+                    prix = Float.parseFloat(UnElemCaddie[3]);
 
-                prixTotal = prixTotal + prix;
-                //ici il faut ajouté un article au panier
+                    prixTotal += prix;
 
-                ajoutArticleTablePanier(intitule, quantite, prix);
+                    // Ajoutez ici l'article au panier avec ajoutArticleTablePanier(intitule, quantite, prix)
+                    ajoutArticleTablePanier(intitule, quantite, prix);
+                }
             }
 
-            JTextField tmp = new JTextField();
-            tmp.setText("" + prixTotal);
-            setTotTxt(tmp);
+            setTotTxt("" + prixTotal);
 
         } catch (Exception e4)
         {
@@ -344,7 +367,8 @@ public class ClientAchat extends JFrame
         catch (IOException e1)
         {
             System.err.println("Erreur de SEND !" + e1.getMessage());
-            try {
+            try
+            {
                 sClient.close();
             } catch (IOException e)
             {
@@ -363,7 +387,6 @@ public class ClientAchat extends JFrame
             if(data[1].equals("ok"))
             {
                 //affichage des éléments
-                setIdArticleEnCours(1);
                 int id, stock;
                 String intitule, image;
                 float prix;
@@ -406,11 +429,30 @@ public class ClientAchat extends JFrame
     private void setArticle(String intitule, float prix, int stock, String image)
     {
         ArticleTxt.setText(intitule);
-        PrixTxt.setText("" + prix);
-        StockTxt.setText("" + stock);
+
+        if(prix == -1.0)
+        {
+            PrixTxt.setText("");
+        }
+        else
+        {
+            PrixTxt.setText("" + prix);
+        }
+        if(stock == -1)
+        {
+            StockTxt.setText("");
+        }
+        else
+        {
+            StockTxt.setText("" + stock);
+        }
 
         ImageIcon imageIcon = new ImageIcon(REPERTOIRE_IMAGES + image);
-        ImgLabel = new JLabel(imageIcon);
+        ImgLabel.setIcon(imageIcon);
+        ImgPanel.add(ImgLabel, BorderLayout.CENTER);
+        ImgPanel.revalidate(); //revalidé le composant enfant d'un conteneur, donc du panel (un peu comme une maj)
+        ImgPanel.repaint();
+
     }
 
     private int getQuantite()
@@ -435,15 +477,19 @@ public class ClientAchat extends JFrame
         Dimension supp = new Dimension(250,20);
         supprimerArticleButton.setPreferredSize(supp);
         viderLePanierButton.setPreferredSize(supp);
-        Dimension Img = new Dimension(220,220);
+        Dimension Img = new Dimension(200,200);
         ImgLabel.setPreferredSize(Img);
         int width = PanierTable.getWidth();
         int newHeight = 150;
         Dimension panier = new Dimension(width,newHeight);
-        //PanierTable.setPreferredSize(panier);
+
+        SpinnerNumberModel numberModel = new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1); // Limite minimale à 0
+        QttSpinner.setModel(numberModel);
+
+        ((JSpinner.DefaultEditor) QttSpinner.getEditor()).getTextField().setEnabled(false); //il faut faire cette ligne après les 2 précédante
+
         PanierScroll.setPreferredSize(panier);
-        /*Dimension labDim = new Dimension(300,200);
-        ImgLabel.setPreferredSize(labDim);*/
+
         setContentPane(MainPanel);
         setLocationRelativeTo(null);
         pack();
@@ -452,6 +498,10 @@ public class ClientAchat extends JFrame
         setSize(1000,700);
         setLocation((screen.width - this.getSize().width)/2,(screen.height - this.getSize().height)/2);
         setResizable(false);
+
+
+        ImgPanel.setLayout(new BorderLayout());
+        ImgPanel.setPreferredSize(Img);
 
         Border border = new LineBorder(Color.BLACK, 1); // Couleur et largeur de la bordure
         AchatPanel.setBorder(border);
@@ -463,8 +513,14 @@ public class ClientAchat extends JFrame
         model.addColumn("Prix à l'unité");
         model.addColumn("Quantité");
 
-        PanierTable = new JTable(model);
-        PanierScroll = new JScrollPane(PanierLabel);
+        PanierTable.setModel(model);
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+
+        // Supposons que "columnIndex" est l'index de la colonne pour laquelle vous souhaitez définir l'alignement.
+        PanierTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        PanierTable.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        PanierTable.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
 
         PanierTable.getTableHeader().setReorderingAllowed(false);
 
@@ -518,6 +574,7 @@ public class ClientAchat extends JFrame
                             //la consult
 
                             String requete = "CONSULT#1";
+                            idArticleEnCours = 1;
                             if(!EnvoieConsult(requete))
                             {
                                 System.err.println("Erreur dans EnvoieConsult");
@@ -527,6 +584,8 @@ public class ClientAchat extends JFrame
                         }
                         logged = true;
                         loginOK();
+                        JOptionPane.showMessageDialog(null, "Login réussi.", "LOGIN", JOptionPane.INFORMATION_MESSAGE);
+
 
                     } catch (Exception e2)
                     {
@@ -544,15 +603,13 @@ public class ClientAchat extends JFrame
             @Override
             public void actionPerformed(ActionEvent e) {
                 //test si l'id de l'article est a 0
-                if(getIdArticleEnCours() == 1)
+                if(idArticleEnCours == 1)
                 {
                     JOptionPane.showMessageDialog(null, "Pas d'article précédent.", "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
                 else
                 {
-                    int tmp = getIdArticleEnCours();
-                    tmp--;
-                    setIdArticleEnCours(tmp);
+                    idArticleEnCours--;
 
                     String requete = "CONSULT#" + idArticleEnCours;
                     if(!EnvoieConsult(requete))
@@ -560,8 +617,7 @@ public class ClientAchat extends JFrame
                         System.err.println("Erreur dans EnvoieConsult");
 
                         //remettre à l'etat initial
-                        tmp++;
-                        setIdArticleEnCours(tmp);
+                        idArticleEnCours++;
 
                         System.exit(1);
                     }
@@ -573,15 +629,13 @@ public class ClientAchat extends JFrame
             @Override
             public void actionPerformed(ActionEvent e) {
                 //test si l'id de l'article est a 0
-                if(getIdArticleEnCours() == 21)
+                if(idArticleEnCours == 21)
                 {
                     JOptionPane.showMessageDialog(null, "Pas d'article suivant.", "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
                 else
                 {
-                    int tmp = getIdArticleEnCours();
-                    tmp++;
-                    setIdArticleEnCours(tmp);
+                    idArticleEnCours++;
 
                     String requete = "CONSULT#" + idArticleEnCours;
                     if(!EnvoieConsult(requete))
@@ -589,8 +643,7 @@ public class ClientAchat extends JFrame
                         System.err.println("Erreur dans EnvoieConsult");
 
                         //remettre à l'etat initial
-                        tmp--;
-                        setIdArticleEnCours(tmp);
+                        idArticleEnCours--;
 
                         System.exit(1);
                     }
@@ -639,7 +692,7 @@ public class ClientAchat extends JFrame
         acheterButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String requete = "PRESENCECADDIE#" + getIdArticleEnCours();
+                String requete = "PRESENCECADDIE#" + idArticleEnCours;
                 String responce;
 
                 //---------------------ENVOIE---------------------------//
@@ -671,7 +724,7 @@ public class ClientAchat extends JFrame
                     if((nbArticlePanier < 5 || estPresent) && getQuantite() != 0)
                     {
                         //ici c'est la gesiton de l'achat
-                        requete = "ACHAT#" + getIdArticleEnCours() + "#" + getQuantite();
+                        requete = "ACHAT#" + idArticleEnCours + "#" + getQuantite();
 
                         //---------------------ENVOIE---------------------------//
 
@@ -780,9 +833,8 @@ public class ClientAchat extends JFrame
                         nbArticlePanier--;
 
                         videTablePanier();
-                        JTextField tmp = new JTextField();
-                        tmp.setText("");
-                        setTotTxt(tmp);
+
+                        setTotTxt("");
 
                         //--------------------gestion du caddie
 
@@ -798,7 +850,7 @@ public class ClientAchat extends JFrame
                 }
             }
         });
-        
+
         viderLePanierButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -833,9 +885,8 @@ public class ClientAchat extends JFrame
 
                 videTablePanier();
                 prixTotal = 0.0F;
-                JTextField tmp = new JTextField();
-                tmp.setText("");
-                setTotTxt(tmp);
+
+                setTotTxt("");
                 nbArticlePanier = 0;
                 JOptionPane.showMessageDialog(null, "Vidage du Caddie reussie !", "CANCELALL", JOptionPane.INFORMATION_MESSAGE);
             }
@@ -877,9 +928,7 @@ public class ClientAchat extends JFrame
                 {
                     videTablePanier();
                     prixTotal = 0.0F;
-                    JTextField tmp = new JTextField();
-                    tmp.setText("");
-                    setTotTxt(tmp);
+                    setTotTxt("");
                     nbArticlePanier = 0;
 
                     JOptionPane.showMessageDialog(null, data[2], "CONFIMER", JOptionPane.INFORMATION_MESSAGE);
@@ -899,7 +948,7 @@ public class ClientAchat extends JFrame
         int compter = 0;
         for (int i = 0; i < lachaine.length(); i++)
         {
-            if('$' == lachaine.charAt(1))
+            if('$' == lachaine.charAt(i))
             {
                 compter++;
             }
@@ -925,8 +974,8 @@ public class ClientAchat extends JFrame
         this.MDPtxt = MDPtxt;
     }
 
-    public void setTotTxt(JTextField Totaltxt) {
-        this.TotTxt = Totaltxt;
+    public void setTotTxt(String Totaltxt) {
+        this.TotTxt.setText(Totaltxt);
     }
 
     public void setNom(String text)
@@ -963,5 +1012,6 @@ public class ClientAchat extends JFrame
         return MDPtxt.getText();
     }
 }
+
 
 
