@@ -1,6 +1,7 @@
 package Socket;
 
 
+import javax.net.SocketFactory;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -10,15 +11,17 @@ import java.net.Socket;
 public class socket
 {
 
-    public static final String SERVER_IP = "192.168.146.128";
+    public static final String SERVER_IP = "192.168.137.129" ;
     public static final int SERVER_PORT = 50000;
     public static Socket ClientSocket()
     {
-        Socket socket = new Socket();
+
 
         try
         {
-            socket.connect(new InetSocketAddress(SERVER_IP, SERVER_PORT));
+
+            Socket socket = new Socket(SERVER_IP,SERVER_PORT);
+            //socket.connect(new InetSocketAddress(SERVER_IP, SERVER_PORT), 2000);
             System.out.println("Connecté au serveur.");
 
             return socket;
@@ -35,6 +38,7 @@ public class socket
     }
     public static void Send(String message, DataOutputStream envoi) throws IOException
     {
+        message = message + "#)";
         envoi.write(message.getBytes());
         envoi.flush();
         System.out.println("Réponse envoyée");
